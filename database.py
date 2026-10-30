@@ -10,6 +10,12 @@ import os
 import datetime
 from typing import List, Dict, Any, Tuple, Optional
 
+# Zona horaria de Perú (UTC-5) para sincronización exacta en la nube
+TZ_PERU = datetime.timezone(datetime.timedelta(hours=-5))
+
+def get_peru_now() -> datetime.datetime:
+    return datetime.datetime.now(TZ_PERU)
+
 DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bodega_miriam.db')
 
 def get_connection() -> sqlite3.Connection:
@@ -261,7 +267,7 @@ def register_sale_transaction(items: List[Dict[str, Any]], id_metodo_pago: str, 
     if not items:
         raise ValueError("El carrito de compras no contiene productos.")
 
-    now = datetime.datetime.now()
+    now = get_peru_now()
     fecha_venta = custom_date or now.strftime('%Y-%m-%d')
     hora_venta = now.strftime('%H:%M:%S')
 

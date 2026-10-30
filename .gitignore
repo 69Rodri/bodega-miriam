@@ -10,7 +10,8 @@ venv/
 # Documentos pesados de investigación (se conservan localmente)
 *.docx
 
-# Scratch y temporales
+# Scripts locales
+subir_a_github.bat
 scratch/
 .system_generated/
 *.log

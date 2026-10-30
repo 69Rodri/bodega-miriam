@@ -11,6 +11,12 @@ import re
 import datetime
 from typing import Dict, Any, List, Optional, Tuple
 
+# Zona horaria de Perú (UTC-5)
+TZ_PERU = datetime.timezone(datetime.timedelta(hours=-5))
+
+def get_peru_now() -> datetime.datetime:
+    return datetime.datetime.now(TZ_PERU)
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 USERS_DB_FILE = os.path.join(BASE_DIR, 'users_system.db')
 USER_DBS_DIR = os.path.join(BASE_DIR, 'user_databases')
@@ -623,7 +629,7 @@ def get_user_financial_summary(username: str, target_date: Optional[str] = None)
         },
         "canales": canales,
         "turnos": turnos,
-        "fechas_disponibles": fechas or [datetime.date.today().isoformat()]
+        "fechas_disponibles": fechas or [get_peru_now().strftime('%Y-%m-%d')]
     }
 
 def get_user_sales_history(username: str, limit: int = 50) -> List[Dict[str, Any]]:
@@ -654,7 +660,7 @@ def get_user_sales_history(username: str, limit: int = 50) -> List[Dict[str, Any
 
     q = f"SELECT {col_id} AS Id_Venta"
     q += f", {col_total} AS Total_Venta" if col_total else ", 10.00 AS Total_Venta"
-    q += f", {col_fecha} AS Fecha_Venta" if col_fecha else f", '{datetime.date.today().isoformat()}' AS Fecha_Venta"
+    q += f", {col_fecha} AS Fecha_Venta" if col_fecha else f", '{get_peru_now().strftime('%Y-%m-%d')}' AS Fecha_Venta"
     q += f", {col_hora} AS Hora_Venta" if col_hora else ", '12:00:00' AS Hora_Venta"
     q += f", {col_met} AS Nombre_Metodo" if col_met else ", 'Efectivo' AS Nombre_Metodo"
     q += f" FROM {v_table} LIMIT {int(limit)}"
@@ -714,7 +720,7 @@ def register_user_sale_transaction(username: str, items: List[Dict[str, Any]], i
         total_venta += round(float(p_info['Precio_Venta']) * cant, 2)
 
     total_venta = round(total_venta, 2)
-    now = datetime.datetime.now()
+    now = get_peru_now()
     f_str = custom_date or now.strftime('%Y-%m-%d')
     h_str = now.strftime('%H:%M:%S')
 

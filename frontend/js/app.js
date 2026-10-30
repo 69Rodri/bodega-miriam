@@ -977,8 +977,7 @@ async function submitSaleTransaction() {
             id_producto: it.id_producto,
             cantidad: it.cantidad
         })),
-        id_metodo_pago: state.selectedPayment,
-        fecha_venta: new Date().toISOString().split('T')[0]
+        id_metodo_pago: state.selectedPayment
     };
 
     try {
@@ -2443,8 +2442,11 @@ function openTicketModal(saleResult, cartItems) {
     if (bizEl) bizEl.textContent = state.currentUser.business_name.toUpperCase();
 
     document.getElementById('ticket-id-display').textContent = `VENTA: ${saleResult.id_venta}`;
-    const fecha = saleResult.fecha_venta || saleResult.fecha || new Date().toISOString().split('T')[0];
-    const hora = saleResult.hora_venta || saleResult.hora || new Date().toTimeString().split(' ')[0].substring(0, 8);
+    const nowD = new Date();
+    const localFallbackDate = `${nowD.getFullYear()}-${String(nowD.getMonth()+1).padStart(2,'0')}-${String(nowD.getDate()).padStart(2,'0')}`;
+    const localFallbackTime = nowD.toTimeString().split(' ')[0].substring(0, 8);
+    const fecha = saleResult.fecha_venta || saleResult.fecha || localFallbackDate;
+    const hora = saleResult.hora_venta || saleResult.hora || localFallbackTime;
     document.getElementById('ticket-datetime-display').textContent = `${fecha}  ${hora}`;
     document.getElementById('ticket-total-display').textContent = `S/ ${saleResult.total_venta.toFixed(2)}`;
 
