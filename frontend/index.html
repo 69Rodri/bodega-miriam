@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Transaccional Relacional | Bodega Miriam & Multi-Negocio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Estilos Personalizados -->
+    <link rel="stylesheet" href="/frontend/css/style.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="cosmic-bg text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+
+    <!-- FONDO CÓSMICO LIMPIO -->
+
+    <!-- HEADER PRINCIPAL -->
+    <header class="glass-card sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Logo & Identidad Dinámica -->
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 p-0.5 shadow-lg shadow-indigo-500/25 flex items-center justify-center">
+                        <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                            <i class="fa-solid fa-shop text-xl text-gradient-cyan" id="header-logo-icon"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2.5">
+                            <h1 class="text-xl font-extrabold tracking-tight text-white" id="header-business-name">BODEGA MIRIAM</h1>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30" id="header-badge-tag">
+                                3FN SQL Server
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 flex items-center space-x-1.5 mt-0.5" id="header-business-sub">
+                            <span><i class="fa-solid fa-location-dot text-rose-500"></i> Villa María del Triunfo, Lima</span>
+                            <span class="text-slate-600">•</span>
+                            <span class="text-slate-300 font-medium">Gestión de Base de Datos - UNTELS</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Estado del Servidor, Sesión & Controles -->
+                <div class="flex items-center space-x-3 sm:space-x-4">
+                    <!-- Badge Real-Time WebSocket -->
+                    <div class="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-online" id="ws-indicator"></span>
+                        <span class="text-slate-300 font-medium" id="ws-status-text">Tiempo Real</span>
+                    </div>
+
+                    <!-- Reloj Digital -->
+                    <div class="text-right hidden lg:block">
+                        <div class="text-sm font-bold text-white font-mono tracking-wider" id="digital-clock">--:--:--</div>
+                        <div class="text-[11px] text-slate-400 font-medium" id="digital-date">--/--/----</div>
+                    </div>
+
+                    <!-- Badge de Usuario Activo -->
+                    <div class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-indigo-950/60 border border-indigo-500/30 text-xs font-semibold text-indigo-300 shadow-sm" id="user-session-badge">
+                        <i class="fa-solid fa-circle-user text-indigo-400 text-sm"></i>
+                        <span id="session-user-name" class="max-w-[130px] truncate">Lesly Miriam</span>
+                    </div>
+
+                    <!-- Botón Cerrar Sesión / Cambiar Cuenta -->
+                    <button onclick="openAuthModal()" title="Cambiar de usuario o registrar nuevo negocio" class="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center space-x-1.5 transition-all">
+                        <i class="fa-solid fa-right-from-bracket text-rose-400"></i>
+                        <span class="hidden sm:inline">Sesión</span>
+                    </button>
+
+                    <!-- Botón Reiniciar Base de Datos -->
+                    <button onclick="resetDatabasePrompt()" title="Restaurar base de datos a sus valores piloto basales" class="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center space-x-1.5 transition-all">
+                        <i class="fa-solid fa-rotate-left text-amber-400"></i>
+                        <span class="hidden xl:inline">Reiniciar BD</span>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- NAVEGACIÓN DINÁMICA POR PESTAÑAS -->
+            <nav class="flex space-x-2 overflow-x-auto pb-3 pt-1 border-t border-slate-800/50" id="main-nav">
+                <!-- Pestañas para Miriam (Preconfiguradas) -->
+                <button onclick="switchTab('pos')" id="tab-btn-pos" class="nav-tab-btn active px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2.5 border border-transparent">
+                    <i class="fa-solid fa-cash-register text-blue-400"></i>
+                    <span>Punto de Venta (POS)</span>
+                    <span id="cart-badge-nav" class="hidden px-1.5 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-mono">0</span>
+                </button>
+                
+                <button onclick="switchTab('cash')" id="tab-btn-cash" class="nav-tab-btn px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 flex items-center space-x-2.5 border border-transparent">
+                    <i class="fa-solid fa-scale-balanced text-emerald-400"></i>
+                    <span>Arqueo y Conciliación</span>
+                </button>
+
+                <button onclick="switchTab('schema')" id="tab-btn-schema" class="nav-tab-btn px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 flex items-center space-x-2.5 border border-transparent">
+                    <i class="fa-solid fa-diagram-project text-purple-400"></i>
+                    <span>Esquema Relacional (DER)</span>
+                </button>
+
+                <button onclick="switchTab('scripts')" id="tab-btn-scripts" class="nav-tab-btn px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 flex items-center space-x-2.5 border border-transparent">
+                    <i class="fa-solid fa-code text-cyan-400"></i>
+                    <span>Scripts SQL & Consola</span>
+                </button>
+
+                <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="nav-tab-btn px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 flex items-center space-x-2.5 border border-transparent">
+                    <i class="fa-solid fa-boxes-stacked text-amber-400"></i>
+                    <span>Catálogo de Artículos</span>
+                </button>
+
+                <!-- Pestañas Exclusivas para Cuentas Dinámicas / Nuevos Negocios -->
+                <button onclick="switchTab('dynamic-data')" id="tab-btn-dynamic-data" class="nav-tab-btn hidden px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 flex items-center space-x-2.5 border border-transparent">
+                    <i class="fa-solid fa-table-cells text-emerald-400"></i>
+                    <span>Gestor de Tablas y Datos</span>
+                </button>
+
+                <button onclick="switchTab('setup-wizard')" id="tab-btn-setup-wizard" class="nav-tab-btn hidden px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 flex items-center space-x-2.5 border border-transparent">
+                    <i class="fa-solid fa-wand-magic-sparkles text-pink-400"></i>
+                    <span>Asistente SQL Server</span>
+                </button>
+            </nav>
+
+        </div>
+    </header>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 1: PUNTO DE VENTA (POS EN TIEMPO REAL - SIN STOCK)        -->
+        <!-- ================================================================= -->
+        <section id="view-pos" class="tab-view space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- CATÁLOGO DE PRODUCTOS (COLUMNA IZQUIERDA - 8 COLS) -->
+                <div class="lg:col-span-8 space-y-4">
+                    
+                    <!-- Barra de Búsqueda y Filtros de Categorías -->
+                    <div class="glass-card p-4 rounded-2xl flex flex-col sm:flex-row gap-3 items-center justify-between">
+                        <!-- Buscador -->
+                        <div class="relative w-full sm:w-72">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="pos-search" oninput="filterProducts()" placeholder="Buscar producto o marca..." class="w-full pl-9 pr-4 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-sans">
+                        </div>
+
+                        <!-- Filtro de Categorías (Pills) -->
+                        <div class="flex items-center space-x-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0" id="category-pills-container">
+                            <button onclick="selectCategory('ALL')" class="cat-pill active px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-indigo-600 text-white">
+                                Todas
+                            </button>
+                            <!-- Dinámico vía JS -->
+                        </div>
+                    </div>
+
+                    <!-- Grid de Productos -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" id="pos-products-grid">
+                        <!-- Tarjetas renderizadas dinámicamente vía app.js -->
+                    </div>
+
+                </div>
+
+                <!-- PANEL LATERAL DE CARRITO Y COBRO (4 COLS) -->
+                <div class="lg:col-span-4 space-y-4">
+                    
+                    <div class="glass-card p-5 rounded-2xl flex flex-col h-[calc(100vh-210px)] sticky top-28 border border-slate-800/80 shadow-2xl">
+                        
+                        <!-- Encabezado del Carrito -->
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-cart-shopping text-indigo-400"></i>
+                                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Orden Actual</h3>
+                            </div>
+                            <button onclick="clearCart()" class="text-xs text-slate-400 hover:text-rose-400 transition-colors flex items-center space-x-1">
+                                <i class="fa-solid fa-trash-can"></i>
+                                <span>Vaciar</span>
+                            </button>
+                        </div>
+
+                        <!-- Lista de Ítems en Carrito -->
+                        <div class="flex-grow overflow-y-auto py-3 space-y-2.5 custom-scrollbar" id="cart-items-container">
+                            <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                                <i class="fa-solid fa-basket-shopping text-3xl mb-2 opacity-40"></i>
+                                <p class="text-xs">El carrito está vacío</p>
+                                <span class="text-[11px] text-slate-600 mt-1">Selecciona productos del catálogo para iniciar una venta</span>
+                            </div>
+                        </div>
+
+                        <!-- Selector de Canal de Recaudación -->
+                        <div class="pt-3 border-t border-slate-800 space-y-2">
+                            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Método de Cobro:</label>
+                            <div class="grid grid-cols-3 gap-2" id="payment-methods-selector">
+                                <button type="button" onclick="selectPayment('MP01')" id="pay-btn-MP01" class="pay-method-btn active p-2.5 rounded-xl border border-slate-700 bg-slate-900 text-center transition-all flex flex-col items-center space-y-1">
+                                    <i class="fa-solid fa-money-bill-wave text-emerald-400 text-base"></i>
+                                    <span class="text-[11px] font-bold text-white">Efectivo</span>
+                                </button>
+                                <button type="button" onclick="selectPayment('MP02')" id="pay-btn-MP02" class="pay-method-btn p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 text-center transition-all flex flex-col items-center space-y-1">
+                                    <i class="fa-solid fa-mobile-screen-button text-purple-400 text-base"></i>
+                                    <span class="text-[11px] font-bold text-slate-300">Yape</span>
+                                </button>
+                                <button type="button" onclick="selectPayment('MP03')" id="pay-btn-MP03" class="pay-method-btn p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 text-center transition-all flex flex-col items-center space-y-1">
+                                    <i class="fa-solid fa-wallet text-cyan-400 text-base"></i>
+                                    <span class="text-[11px] font-bold text-slate-300">Plin</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Calculadora de Efectivo y Vuelto (Solo Visible en Efectivo) -->
+                        <div id="cash-calculator" class="pt-2 space-y-1.5">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-400">Paga con (S/):</span>
+                                <input type="number" step="0.50" id="cash-received-input" oninput="calculateChange()" placeholder="0.00" class="w-24 px-2 py-1 bg-slate-950 border border-slate-800 rounded-lg text-right font-mono text-xs text-white focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <div class="flex items-center justify-between text-xs font-mono">
+                                <span class="text-slate-400">Vuelto:</span>
+                                <span class="font-bold text-emerald-400 text-sm" id="cash-change-display">S/ 0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Resumen Total y Botón Transaccional -->
+                        <div class="pt-3 border-t border-slate-800 space-y-3">
+                            <div class="flex items-baseline justify-between">
+                                <span class="text-xs font-semibold text-slate-400">TOTAL A COBRAR:</span>
+                                <span class="text-2xl font-extrabold text-white font-mono tracking-tight" id="cart-total-display">S/ 0.00</span>
+                            </div>
+
+                            <button onclick="submitSaleTransaction()" id="btn-submit-sale" disabled class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-extrabold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-check-double"></i>
+                                <span>CONFIRMAR VENTA</span>
+                            </button>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 2: ARQUEO Y CONCILIACIÓN FINANCIERA                       -->
+        <!-- ================================================================= -->
+        <section id="view-cash" class="tab-view hidden space-y-6">
+            
+            <!-- Barra Superior de Filtro por Fecha -->
+            <div class="glass-card p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg">
+                        <i class="fa-solid fa-sack-dollar"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-white">Arqueo Cronológico y Conciliación Multicanal</h2>
+                        <p class="text-xs text-slate-400">Auditoría en tiempo real de ingresos brutos, costo mayorista y ganancia neta</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 w-full sm:w-auto">
+                    <span class="text-xs text-slate-400 font-medium">Fecha:</span>
+                    <select id="cash-date-filter" onchange="loadFinancialData()" class="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <option value="ALL">Todas las Fechas (Histórico)</option>
+                        <option value="2026-10-25" selected>2026-10-25 (Día Piloto)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- TARJETAS KPI DE GANANCIAS Y COSTOS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="kpi-cards-grid">
+                <!-- Tarjeta 1: Ventas Totales -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800/80 relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingreso Bruto</span>
+                        <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-extrabold text-white font-mono mt-3" id="kpi-revenue">S/ 51.50</div>
+                    <div class="text-[11px] text-slate-400 mt-1 flex items-center space-x-1">
+                        <span class="text-emerald-400 font-bold" id="kpi-tx-count">5</span> transacciones liquidadas
+                    </div>
+                </div>
+
+                <!-- Tarjeta 2: Costo Mayorista -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800/80 relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Costo Mercadería</span>
+                        <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-truck-moving"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-extrabold text-rose-400 font-mono mt-3" id="kpi-cost">S/ 40.40</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Costo de compra a Paci, Salem y CBC</div>
+                </div>
+
+                <!-- Tarjeta 3: Ganancia Neta Real -->
+                <div class="glass-card p-5 rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/20 to-slate-900 relative overflow-hidden shadow-lg shadow-emerald-500/10">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-emerald-300 uppercase tracking-wider">Ganancia Neta</span>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-black text-emerald-400 font-mono mt-3" id="kpi-net-profit">S/ 11.10</div>
+                    <div class="text-[11px] text-emerald-300/80 mt-1 flex items-center space-x-1">
+                        <span>Margen Comercial:</span>
+                        <span class="font-bold text-white font-mono" id="kpi-margin-pct">21.55%</span>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 4: Efectivo vs Billeteras -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800/80 relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Arqueo de Gaveta</span>
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-cash-register"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-extrabold text-amber-400 font-mono mt-3" id="kpi-cash-total">S/ 33.00</div>
+                    <div class="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
+                        <span>Digitales (Yape/Plin):</span>
+                        <span class="font-mono text-purple-400 font-bold" id="kpi-digital-total">S/ 18.50</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ARQUEO POR TURNOS Y CONCILIACIÓN MULTICANAL -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Tabla de Turnos (7 cols) -->
+                <div class="lg:col-span-7 glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-clock-rotate-left text-blue-400"></i>
+                            <span>Arqueo de Caja por Turnos de Atención</span>
+                        </h3>
+                        <span class="text-[11px] text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                            Cuadre: S/ 0.00
+                        </span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="text-slate-400 border-b border-slate-800 font-bold">
+                                    <th class="py-2.5">Turno</th>
+                                    <th class="py-2.5 text-center">Ventas</th>
+                                    <th class="py-2.5 text-right">Efectivo (S/)</th>
+                                    <th class="py-2.5 text-right">Digital (S/)</th>
+                                    <th class="py-2.5 text-right text-emerald-400">Total (S/)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shifts-table-tbody" class="divide-y divide-slate-800/60 font-mono">
+                                <!-- Dinámico vía JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Conciliación Multicanal (5 cols) -->
+                <div class="lg:col-span-5 glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-pie text-purple-400"></i>
+                            <span>Conciliación por Canal</span>
+                        </h3>
+                        <span class="text-xs text-slate-400 font-mono">100% Auditado</span>
+                    </div>
+
+                    <div class="space-y-3" id="channels-progress-container">
+                        <!-- Dinámico vía JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- HISTORIAL DE TRANSACCIONES AUDITADAS -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-list-check text-cyan-400"></i>
+                        <span>Registro Detallado de Ventas en Tiempo Real</span>
+                    </h3>
+                    <span class="text-xs text-slate-400 font-mono">Últimas transacciones registradas</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-800 font-bold">
+                                <th class="py-2.5">ID Venta</th>
+                                <th class="py-2.5">Fecha</th>
+                                <th class="py-2.5">Hora</th>
+                                <th class="py-2.5">Canal</th>
+                                <th class="py-2.5">Ítems Adquiridos</th>
+                                <th class="py-2.5 text-right">Costo (S/)</th>
+                                <th class="py-2.5 text-right text-emerald-400">Total (S/)</th>
+                                <th class="py-2.5 text-right text-indigo-400">Ganancia (S/)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-history-tbody" class="divide-y divide-slate-800/60 font-mono">
+                            <!-- Dinámico vía JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 3: ESQUEMA RELACIONAL (DER) Y CONEXIONES                  -->
+        <!-- ================================================================= -->
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 3: ESTUDIO DE DIAGRAMAS DER Y MER EN TIEMPO REAL (DRAW.IO) -->
+        <!-- ================================================================= -->
+        <section id="view-schema" class="tab-view hidden space-y-6">
+            
+            <!-- Encabezado del Estudio y Selector de Modos -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-extrabold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-diagram-project text-purple-400"></i>
+                        <span id="diagram-studio-title">Estudio de Diagramas en Tiempo Real</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1" id="diagram-studio-sub">
+                        Lienzo interactivo estilo draw.io de tablas, claves primarias 🔑, claves foráneas 🔗 y relaciones conectado a la base de datos activa.
+                    </p>
+                </div>
+
+                <!-- Selector de Tipo de Diagrama -->
+                <div class="flex items-center space-x-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+                    <button onclick="switchDiagramMode('der')" id="btn-diagram-der" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-md transition-all flex items-center space-x-1.5 cursor-pointer">
+                        <i class="fa-solid fa-table-cells text-indigo-300"></i>
+                        <span>DER Físico Relacional</span>
+                    </button>
+                    <button onclick="switchDiagramMode('cards')" id="btn-diagram-cards" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all flex items-center space-x-1.5 cursor-pointer">
+                        <i class="fa-solid fa-book-bookmark text-emerald-400"></i>
+                        <span>Diccionario de Tablas</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- LIENZO INTERACTIVO ESTILO DRAW.IO (DER / MER EN VIVO) -->
+            <div id="diagram-canvas-container" class="glass-card rounded-3xl border border-slate-800 overflow-hidden relative shadow-2xl flex flex-col">
+                <!-- Barra de Herramientas del Lienzo -->
+                <div class="p-3 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between flex-wrap gap-2 text-xs">
+                    <div class="flex items-center space-x-3 text-slate-300">
+                        <span class="font-bold flex items-center space-x-1.5 text-indigo-400">
+                            <i class="fa-solid fa-circle-nodes"></i>
+                            <span id="canvas-status-mode">Modo: DER Físico (Tablas y Llaves 🔑🔗)</span>
+                        </span>
+                        <span class="text-slate-600">•</span>
+                        <span class="text-slate-400 text-[11px]" id="canvas-nodes-count">Cargando esquema...</span>
+                        <span class="text-slate-600">•</span>
+                        <span class="text-[11px] text-slate-500 hidden sm:inline"><i class="fa-solid fa-hand text-slate-400 mr-1"></i>Arrastra libremente las tablas y rombos para reubicarlos</span>
+                    </div>
+
+                    <div class="flex items-center space-x-1.5">
+                        <button onclick="zoomDiagram(0.1)" title="Acercar (Zoom In)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-all cursor-pointer">
+                            <i class="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                        </button>
+                        <button onclick="zoomDiagram(-0.1)" title="Alejar (Zoom Out)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-all cursor-pointer">
+                            <i class="fa-solid fa-magnifying-glass-minus text-xs"></i>
+                        </button>
+                        <button onclick="resetDiagramView()" title="Centrar / Restablecer vista" class="px-2.5 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer">
+                            <i class="fa-solid fa-arrows-to-dot text-xs"></i>
+                            <span class="hidden md:inline">Centrar</span>
+                        </button>
+                        <button onclick="autoLayoutDiagram()" title="Auto-distribuir tablas" class="px-2.5 h-8 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer">
+                            <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                            <span class="hidden md:inline">Auto-Ordenar</span>
+                        </button>
+                        <button onclick="toggleCanvasFullscreen()" title="Pantalla Completa" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-all cursor-pointer">
+                            <i class="fa-solid fa-expand text-xs" id="icon-canvas-fullscreen"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Área de Lienzo / Grid -->
+                <div id="diagram-viewport" class="relative w-full h-[620px] bg-slate-950 overflow-hidden select-none cursor-grab active:cursor-grabbing" style="background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px); background-size: 24px 24px;">
+                    <!-- Capa de Transformación (Zoom & Pan) -->
+                    <div id="diagram-stage" class="absolute inset-0 origin-top-left transition-transform duration-75">
+                        <!-- Capa SVG para Líneas Conectoras y Relaciones -->
+                        <svg id="diagram-svg-layer" class="absolute top-0 left-0 w-[5000px] h-[5000px] pointer-events-none">
+                            <defs>
+                                <marker id="arrow-der" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="#6366f1" />
+                                </marker>
+                                <marker id="arrow-chen" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto" markerUnits="strokeWidth">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="#ec4899" />
+                                </marker>
+                            </defs>
+                            <g id="svg-connections-group"></g>
+                        </svg>
+
+                        <!-- Capa de Nodos HTML Draggables (Tablas DER o Entidades MER) -->
+                        <div id="diagram-nodes-layer" class="absolute top-0 left-0 w-[5000px] h-[5000px]"></div>
+                    </div>
+                </div>
+
+                <!-- Footer del Lienzo con Leyenda -->
+                <div class="p-3 bg-slate-950/90 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 flex-wrap gap-2">
+                    <div class="flex items-center space-x-4 flex-wrap gap-y-1.5">
+                        <span class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block shadow-sm shadow-amber-400/50"></span>
+                            <span class="font-mono font-bold text-amber-300">🔑 PK</span> <span class="text-slate-300 text-[11px]">(Clave Primaria)</span>
+                        </span>
+                        <span class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block shadow-sm shadow-cyan-400/50"></span>
+                            <span class="font-mono font-bold text-cyan-300">🔗 FK</span> <span class="text-slate-300 text-[11px]">(Clave Foránea)</span>
+                        </span>
+                        <span class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block shadow-sm shadow-purple-400/50"></span>
+                            <span class="font-mono font-bold text-purple-300">✨ UQ</span> <span class="text-slate-300 text-[11px]">(Clave Única / UNIQUE)</span>
+                        </span>
+                        <span class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shadow-sm shadow-emerald-400/50"></span>
+                            <span class="font-mono font-bold text-emerald-300">✓ CHK</span> <span class="text-slate-300 text-[11px]">(Restricción CHECK)</span>
+                        </span>
+                        <span class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block shadow-sm shadow-slate-400/50"></span>
+                            <span class="font-mono font-bold text-slate-300">NN</span> <span class="text-slate-300 text-[11px]">(NOT NULL)</span>
+                        </span>
+                        <span class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block shadow-sm shadow-amber-500/50"></span>
+                            <span class="font-mono font-bold text-amber-200">DEF</span> <span class="text-slate-300 text-[11px]">(DEFAULT)</span>
+                        </span>
+                        <span class="flex items-center space-x-1.5">
+                            <span class="inline-block w-4 h-0.5 bg-indigo-500 shadow-sm shadow-indigo-500/50"></span>
+                            <span class="text-indigo-300 font-mono font-bold">1 : N</span> <span class="text-slate-300 text-[11px]">(Padre a Hijo)</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISTA ALTERNATIVA: DICCIONARIO DE DATOS Y TARJETAS RELACIONALES -->
+            <div id="diagram-cards-container-wrapper" class="hidden space-y-6">
+                <!-- Encabezado y Leyenda del Diccionario de Datos -->
+                <div class="glass-card p-4 rounded-2xl border border-slate-800 flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-book-bookmark text-emerald-400"></i>
+                            <span>Diccionario de Datos y Catálogo de Restricciones (Constraints)</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Especificación formal de tipos de datos, llaves primarias/foráneas, restricciones de unicidad (UNIQUE), validación de dominio (CHECK) y valores por defecto (DEFAULT) en 3FN.</p>
+                    </div>
+                    <div class="flex items-center space-x-2 text-[11px] font-mono flex-wrap gap-y-1">
+                        <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">🔑 PK</span>
+                        <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">🔗 FK</span>
+                        <span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">✨ UNIQUE</span>
+                        <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">✓ CHECK</span>
+                        <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">NN (NOT NULL)</span>
+                        <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-200 border border-amber-500/20">DEF (DEFAULT)</span>
+                    </div>
+                </div>
+
+                <!-- Tarjetas de Tablas Relacionales -->
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="schema-cards-container"></div>
+
+                <!-- Resumen de Cardinalidades y Enlaces -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3" id="relationships-summary-card">
+                    <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-link text-indigo-400"></i>
+                        <span>Relaciones y Cardinalidades del Negocio</span>
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs" id="relationships-grid"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 4: SCRIPTS SQL (DDL / DML) Y CONSOLA EN TIEMPO REAL       -->
+        <!-- ================================================================= -->
+        <section id="view-scripts" class="tab-view hidden space-y-6">
+            
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-database text-cyan-400"></i>
+                        <span>Scripts SQL Server y Consola Interactiva en Vivo</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Definición DDL oficial, inserción DML de datos y ejecución libre de consultas SQL sobre la base de datos.</p>
+                </div>
+            </div>
+
+            <!-- Pestañas de Scripts (DDL vs DML vs Consola) -->
+            <div class="flex space-x-2 border-b border-slate-800 pb-2">
+                <button onclick="switchSqlTab('ddl')" id="subtab-btn-ddl" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white">
+                    DDL (Creación de Tablas)
+                </button>
+                <button onclick="switchSqlTab('dml')" id="subtab-btn-dml" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white">
+                    DML (Población de Datos)
+                </button>
+                <button onclick="switchSqlTab('console')" id="subtab-btn-console" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white">
+                    Consola Interactiva SQL
+                </button>
+            </div>
+
+            <!-- Visor de DDL -->
+            <div id="sql-view-ddl" class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-400 font-mono">Sintaxis T-SQL Server 3FN (Sin Stock)</span>
+                    <button onclick="copySqlCode('ddl')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 font-semibold flex items-center space-x-1.5">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>Copiar DDL</span>
+                    </button>
+                </div>
+                <pre class="glass-card p-4 rounded-2xl border border-slate-800 font-mono text-xs text-indigo-300 overflow-x-auto max-h-[480px] custom-scrollbar" id="ddl-code-block">Cargando script DDL...</pre>
+            </div>
+
+            <!-- Visor de DML -->
+            <div id="sql-view-dml" class="hidden space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-400 font-mono">Inserción de Catálogo Oficial y Ventas Piloto</span>
+                    <button onclick="copySqlCode('dml')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 font-semibold flex items-center space-x-1.5">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>Copiar DML</span>
+                    </button>
+                </div>
+                <pre class="glass-card p-4 rounded-2xl border border-slate-800 font-mono text-xs text-emerald-300 overflow-x-auto max-h-[480px] custom-scrollbar" id="dml-code-block">Cargando script DML...</pre>
+            </div>
+
+            <!-- Consola Interactiva SQL -->
+            <div id="sql-view-console" class="hidden space-y-4">
+                
+                <!-- Presets de Consultas de Negocio -->
+                <div class="glass-card p-4 rounded-2xl space-y-2 border border-slate-800">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Consultas Rápidas de Negocio:</span>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="loadPresetQuery(1)" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs text-blue-300 font-mono border border-slate-700">
+                            1. Ganancias por Producto
+                        </button>
+                        <button onclick="loadPresetQuery(2)" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs text-emerald-300 font-mono border border-slate-700">
+                            2. Arqueo por Turnos
+                        </button>
+                        <button onclick="loadPresetQuery(3)" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs text-purple-300 font-mono border border-slate-700">
+                            3. Conciliación Multicanal
+                        </button>
+                        <button onclick="loadPresetQuery(4)" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs text-cyan-300 font-mono border border-slate-700">
+                            4. Detalle Completo de Ventas (JOIN 5 tablas)
+                        </button>
+                        <button onclick="loadPresetQuery(5)" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs text-amber-300 font-mono border border-slate-700">
+                            5. Rentabilidad Consolidada por Categoría
+                        </button>
+                        <button onclick="loadPresetQuery(6)" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs text-rose-300 font-mono border border-slate-700">
+                            6. Ganancias por Día y Mes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Editor de Consultas -->
+                <div class="glass-card p-4 rounded-2xl space-y-3 border border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-terminal text-cyan-400"></i>
+                            <span>Editor Transact-SQL / SQLite:</span>
+                        </label>
+                        <button onclick="runUserSqlQuery()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center space-x-2 transition-all">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Ejecutar Consulta</span>
+                        </button>
+                    </div>
+                    <textarea id="sql-console-input" rows="5" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-emerald-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" placeholder="Escribe tu consulta SQL aquí... Ej: SELECT * FROM PRODUCTO;"></textarea>
+                </div>
+
+                <!-- Resultados de la Consulta -->
+                <div class="glass-card p-4 rounded-2xl border border-slate-800 space-y-3" id="sql-results-panel">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-white">Resultado de la Ejecución:</span>
+                        <span class="text-[11px] text-slate-400 font-mono" id="sql-execution-time">Esperando ejecución...</span>
+                    </div>
+                    <div class="overflow-x-auto max-h-80" id="sql-results-table-container">
+                        <p class="text-xs text-slate-500 py-6 text-center">Ejecuta una consulta SQL para visualizar el conjunto de datos resultante.</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 5: CATÁLOGO DE ARTÍCULOS (OFICIAL 3FN - SIN STOCK)        -->
+        <!-- ================================================================= -->
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 5: CATÁLOGO DINÁMICO DE PRODUCTOS (COLUMNAS REALES)      -->
+        <!-- ================================================================= -->
+        <section id="view-inventory" class="tab-view hidden space-y-6">
+            
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-boxes-stacked text-amber-400"></i>
+                        <span id="catalog-banner-title">Catálogo de Productos</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1" id="catalog-banner-sub">
+                        Atributos y datos reales de la tabla de productos de la base de datos activa.
+                    </p>
+                </div>
+                <div class="text-xs font-mono px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 font-bold" id="catalog-banner-count">
+                    0 Artículos Registrados
+                </div>
+            </div>
+
+            <!-- Tabla de Catálogo -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead id="inventory-table-thead">
+                        <!-- Dinámico vía JS según columnas reales -->
+                    </thead>
+                    <tbody id="inventory-table-tbody" class="divide-y divide-slate-800/60 font-mono">
+                        <!-- Dinámico vía JS -->
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 6: GESTOR DINÁMICO DE TABLAS Y DATOS (CRUD MULTI-NEGOCIO) -->
+        <!-- ================================================================= -->
+        <section id="view-dynamic-data" class="tab-view hidden space-y-6">
+            
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-table-cells text-emerald-400"></i>
+                        <span>Gestor Universal de Tablas y Datos</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Explora, filtra e inserta nuevos registros en cualquiera de las tablas creadas en tu base de datos.</p>
+                </div>
+                <button onclick="openAddRowModal()" id="btn-add-dynamic-row" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center space-x-2 transition-all">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Nuevo Registro</span>
+                </button>
+            </div>
+
+            <!-- Selector de Tablas (Pills Dinámicas) -->
+            <div class="glass-card p-3 rounded-2xl border border-slate-800 flex items-center space-x-2 overflow-x-auto custom-scrollbar" id="dynamic-table-pills">
+                <!-- Generado dinámicamente vía app.js -->
+            </div>
+
+            <!-- Vista de Datos de la Tabla Seleccionada -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tabla Activa:</span>
+                        <span class="font-mono text-sm font-bold text-emerald-400" id="dynamic-active-table-title">--</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300" id="dynamic-row-count-badge">0 filas</span>
+                    </div>
+
+                    <!-- Buscador en Tabla Dinámica -->
+                    <div class="relative w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="dynamic-search-input" oninput="searchDynamicTable()" placeholder="Filtrar registros..." class="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-[480px] custom-scrollbar" id="dynamic-table-container">
+                    <p class="text-xs text-slate-500 py-8 text-center">Selecciona una tabla para explorar sus registros.</p>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 7: ASISTENTE DE INICIALIZACIÓN SQL SERVER (SETUP WIZARD)   -->
+        <!-- ================================================================= -->
+        <section id="view-setup-wizard" class="tab-view hidden space-y-6">
+            
+            <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-3 bg-gradient-to-r from-indigo-950/40 via-slate-900/60 to-purple-950/40">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-600 to-indigo-600 flex items-center justify-center text-white text-xl shadow-lg shadow-pink-500/25">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-extrabold text-white">Asistente de Inicialización de Base de Datos SQL Server</h2>
+                            <p class="text-xs text-slate-300">Pega tus scripts de creación y datos. El sistema generará automáticamente la base de datos, DER interactivo y gestores.</p>
+                        </div>
+                    </div>
+                    
+                    <button onclick="loadTemplateScripts()" class="px-4 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/50 text-indigo-300 text-xs font-bold transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-file-code"></i>
+                        <span>Cargar Plantilla de Ejemplo (Minimarket El Progreso)</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Script DDL -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-layer-group text-indigo-400"></i>
+                            <span>1. Script DDL (Creación de Tablas, Claves Primarias y Foráneas)</span>
+                        </label>
+                        <span class="text-[11px] text-indigo-400 font-mono">SQL Server / T-SQL</span>
+                    </div>
+                    <textarea id="setup-ddl-input" rows="14" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-indigo-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 custom-scrollbar" placeholder="CREATE TABLE CLIENTE (...);&#10;CREATE TABLE PEDIDO (...);&#10;GO"></textarea>
+                </div>
+
+                <!-- Script DML -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-database text-emerald-400"></i>
+                            <span>2. Script DML (Población e Inserción Inicial de Datos)</span>
+                        </label>
+                        <span class="text-[11px] text-emerald-400 font-mono">INSERT INTO ...</span>
+                    </div>
+                    <textarea id="setup-dml-input" rows="14" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-emerald-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 custom-scrollbar" placeholder="INSERT INTO CLIENTE (...) VALUES (...);&#10;INSERT INTO PEDIDO (...) VALUES (...);&#10;GO"></textarea>
+                </div>
+            </div>
+
+            <!-- Botón de Procesamiento -->
+            <div class="flex justify-end">
+                <button onclick="submitSetupDatabase()" class="px-8 py-3.5 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white font-extrabold text-sm shadow-xl shadow-purple-600/30 flex items-center space-x-3 transition-all transform hover:-translate-y-0.5">
+                    <i class="fa-solid fa-bolt text-amber-300"></i>
+                    <span>PROCESAR SCRIPTS Y CREAR SISTEMA DE GESTIÓN</span>
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800/80 bg-slate-950/80 backdrop-blur-md py-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>Sistema Transaccional Relacional en 3FN • Universidad Nacional Tecnológica de Lima Sur (UNTELS)</span>
+            <span class="text-slate-400 font-mono text-[11px]">Gestión de Base de Datos • Arquitectura Conectada en Tiempo Real</span>
+        </div>
+    </footer>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 1: AUTENTICACIÓN Y REGISTRO MULTI-NEGOCIO                  -->
+    <!-- ================================================================= -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-indigo-500/30 shadow-2xl space-y-5 animate-scale-up relative">
+            
+            <!-- Pantalla Obligatoria de Autenticación / Registro (Sin botón cerrar) -->
+<!-- Encabezado del Modal -->
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 mx-auto flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-500/25 mb-3">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3 class="text-lg font-extrabold text-white">Acceso al Sistema Comercial</h3>
+                <p class="text-xs text-slate-400">Selecciona una cuenta existente o registra un nuevo negocio</p>
+            </div>
+
+            <!-- Pestañas Login vs Registro -->
+            <div class="flex rounded-xl bg-slate-900 p-1 border border-slate-800">
+                <button type="button" onclick="switchAuthTab('login')" id="auth-tab-btn-login" class="w-1/2 py-2 rounded-lg text-xs font-bold bg-indigo-600 text-white transition-all">
+                    Iniciar Sesión
+                </button>
+                <button type="button" onclick="switchAuthTab('register')" id="auth-tab-btn-register" class="w-1/2 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all">
+                    Registrar Negocio
+                </button>
+            </div>
+
+            <!-- Formulario de Login -->
+            <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-3.5">
+                <div>
+                    <label class="text-xs font-medium text-slate-300 block mb-1">Nombre de Usuario:</label>
+                    <input type="text" id="login-username" required placeholder="Ej: miriam" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 font-sans">
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-300 block mb-1">Contraseña:</label>
+                    <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 font-sans">
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Ingresar</span>
+                </button>
+            </form>
+
+            <!-- Formulario de Registro -->
+            <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="space-y-3 hidden">
+                <div>
+                    <label class="text-xs font-medium text-slate-300 block mb-1">Nombre del Negocio:</label>
+                    <input type="text" id="reg-business-name" required placeholder="Ej: Minimarket Los Laureles" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 font-sans">
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-300 block mb-1">Nombre del Responsable:</label>
+                    <input type="text" id="reg-owner-name" required placeholder="Ej: Juan Quispe" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 font-sans">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs font-medium text-slate-300 block mb-1">Usuario:</label>
+                        <input type="text" id="reg-username" required placeholder="juanq" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 font-sans">
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-300 block mb-1">Contraseña:</label>
+                        <input type="password" id="reg-password" required placeholder="••••••••" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 font-sans">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Crear Cuenta y Configurar BD</span>
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 2: AGREGAR REGISTRO DINÁMICO EN TABLA                      -->
+    <!-- ================================================================= -->
+    <div id="modal-add-row" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="glass-card max-w-lg w-full p-6 rounded-3xl border border-slate-800 shadow-2xl space-y-4 animate-scale-up">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-plus-circle text-emerald-400"></i>
+                    <span>Nuevo Registro en <span class="font-mono text-emerald-400" id="modal-add-table-name">TABLA</span></span>
+                </h3>
+                <button onclick="closeAddRowModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="form-add-dynamic-row" onsubmit="submitAddRow(event)" class="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
+                <div id="modal-add-inputs-container" class="space-y-3">
+                    <!-- Dinámico vía JS -->
+                </div>
+                <div class="pt-3 border-t border-slate-800 flex justify-end space-x-2">
+                    <button type="button" onclick="closeAddRowModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30">
+                        Guardar Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 3: VISOR DE DIAGRAMAS EN ALTA RESOLUCIÓN                    -->
+    <!-- ================================================================= -->
+    <div id="diagram-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-card max-w-5xl w-full p-6 rounded-3xl border border-slate-800 shadow-2xl space-y-4 animate-scale-up">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2" id="diagram-modal-title">
+                    <i class="fa-solid fa-image text-purple-400"></i>
+                    <span>Diagrama de Base de Datos</span>
+                </h3>
+                <button onclick="closeDiagramModal()" class="text-slate-400 hover:text-white text-base">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="max-h-[75vh] overflow-auto flex items-center justify-center bg-slate-950/60 rounded-2xl p-2 border border-slate-900 custom-scrollbar">
+                <img id="diagram-modal-img" src="" alt="Diagrama" class="max-w-full h-auto rounded-xl shadow-lg object-contain">
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 4: TICKET TÉRMICO IMPRIMIBLE                                -->
+    <!-- ================================================================= -->
+    <div id="ticket-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white text-slate-900 p-6 rounded-2xl max-w-sm w-full font-mono text-xs shadow-2xl space-y-4 animate-scale-up border border-slate-300 ticket-paper">
+            <div class="text-center space-y-1 pb-3 border-b border-dashed border-slate-400">
+                <h4 class="font-bold text-sm tracking-wide" id="ticket-business-name">BODEGA MIRIAM</h4>
+                <p class="text-[11px] text-slate-600" id="ticket-owner-name">De: Lesly Miriam</p>
+                <p class="text-[10px] text-slate-500">Villa María del Triunfo - Lima</p>
+                <p class="text-[10px] text-slate-500">RUC: 10458921345</p>
+            </div>
+
+            <div class="flex justify-between text-[11px] pb-2 border-b border-dashed border-slate-400">
+                <span id="ticket-id-display">VENTA: V06</span>
+                <span id="ticket-datetime-display">2026-10-25 10:00</span>
+            </div>
+
+            <div class="space-y-1.5 py-1" id="ticket-items-tbody">
+                <!-- Dinámico vía JS -->
+            </div>
+
+            <div class="pt-3 border-t border-dashed border-slate-400 space-y-1 text-right">
+                <div class="flex justify-between text-xs font-bold">
+                    <span>TOTAL:</span>
+                    <span id="ticket-total-display">S/ 0.00</span>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-600">
+                    <span>MÉTODO:</span>
+                    <span id="ticket-method-display">Efectivo</span>
+                </div>
+            </div>
+
+            <div class="text-center text-[10px] text-slate-500 pt-2 border-t border-dashed border-slate-300">
+                ¡Gracias por su compra en Bodega Miriam!
+            </div>
+
+            <div class="flex space-x-2 pt-2 no-print">
+                <button onclick="window.print()" class="flex-1 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Imprimir</span>
+                </button>
+                <button onclick="closeTicketModal()" class="flex-1 py-2 bg-slate-200 text-slate-800 rounded-lg text-xs font-bold hover:bg-slate-300 transition-colors">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICACIONES FLOTANTES -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+    <!-- Script Controlador Principal -->
+    <script src="/frontend/js/app.js"></script>
+</body>
+</html>

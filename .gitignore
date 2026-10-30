@@ -1,0 +1,16 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv/
+env/
+venv/
+
+# Documentos pesados de investigación (se conservan localmente)
+*.docx
+
+# Scratch y temporales
+scratch/
+.system_generated/
+*.log
