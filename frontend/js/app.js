@@ -135,7 +135,7 @@ function handleRealtimeEvent(msg) {
             loadFinancialData();
             showToast(`Nueva venta registrada: ${msg.data.id_venta} por S/ ${msg.data.total_venta}`, 'success');
         }
-    } else if (msg.event === 'SALE_DELETED' || msg.event === 'SALE_RESTORED') {
+    } else if (msg.event === 'SALE_DELETED' || msg.event === 'SALE_RESTORED' || msg.event === 'SALE_PERMANENTLY_DELETED' || msg.event === 'TRASH_EMPTIED') {
         if (state.currentUser.is_miriam) {
             loadFinancialData();
         }
@@ -1014,13 +1014,18 @@ async function submitSaleTransaction() {
 async function loadFinancialData() {
     const dateFilter = document.getElementById('cash-date-filter')?.value || '2026-10-25';
     try {
-        const [resFin, resSales] = await Promise.all([
+        const [resFin, resSales, resDeleted] = await Promise.all([
             apiFetch(`/api/financial-summary?fecha=${dateFilter}`),
-            apiFetch('/api/sales?limit=50')
+            apiFetch('/api/sales?limit=100'),
+            apiFetch('/api/sales/deleted')
         ]);
 
         const dataFin = await resFin.json();
         const dataSales = await resSales.json();
+        let dataDeleted = { success: false, deleted_sales: [] };
+        try {
+            dataDeleted = await resDeleted.json();
+        } catch(e) {}
 
         if (dataFin.success) {
             state.financialData = dataFin.data;
@@ -1032,8 +1037,20 @@ async function loadFinancialData() {
 
         if (dataSales.success) {
             state.salesHistory = dataSales.sales;
-            renderSalesHistoryTable(dataSales.sales);
+            const activeSales = dataSales.sales.filter(s => s.Estado !== 'ELIMINADO');
+            renderSalesHistoryTable(activeSales);
+            const activeBadge = document.getElementById('badge-active-sales-count');
+            if (activeBadge) activeBadge.textContent = activeSales.length;
         }
+
+        const deletedSales = (dataDeleted.success && dataDeleted.deleted_sales) 
+            ? dataDeleted.deleted_sales 
+            : (dataSales.sales ? dataSales.sales.filter(s => s.Estado === 'ELIMINADO') : []);
+        
+        renderSalesTrashTable(deletedSales);
+        const trashBadge = document.getElementById('badge-trash-sales-count');
+        if (trashBadge) trashBadge.textContent = deletedSales.length;
+
     } catch (e) {
         console.error("Error al cargar datos financieros:", e);
     }
@@ -1113,45 +1130,109 @@ function renderDateFilterOptions(fechas) {
     select.innerHTML = html;
 }
 
+// Conmutador entre Vista de Ventas Activas y Apartado de Ventas Borradas
+function switchSalesHistoryView(view) {
+    const activeBtn = document.getElementById('tab-sales-active-btn');
+    const trashBtn = document.getElementById('tab-sales-trash-btn');
+    const activeView = document.getElementById('sales-active-view');
+    const trashView = document.getElementById('sales-trash-view');
+
+    if (!activeBtn || !trashBtn || !activeView || !trashView) return;
+
+    if (view === 'active') {
+        activeBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-md transition-all flex items-center space-x-1.5 cursor-pointer";
+        trashBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-rose-300 hover:bg-slate-800 transition-all flex items-center space-x-1.5 cursor-pointer";
+        activeView.classList.remove('hidden');
+        trashView.classList.add('hidden');
+    } else {
+        activeBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-cyan-300 hover:bg-slate-800 transition-all flex items-center space-x-1.5 cursor-pointer";
+        trashBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white shadow-md transition-all flex items-center space-x-1.5 cursor-pointer";
+        activeView.classList.add('hidden');
+        trashView.classList.remove('hidden');
+    }
+}
+
 function renderSalesHistoryTable(sales) {
     const tbody = document.getElementById('sales-history-tbody');
     if (!tbody || !sales) return;
 
-    if (sales.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-500">No hay ventas registradas.</td></tr>`;
+    const activeSales = sales.filter(s => s.Estado !== 'ELIMINADO');
+
+    if (activeSales.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-500">No hay ventas registradas actualmente.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = sales.map(s => {
+    tbody.innerHTML = activeSales.map(s => {
         let badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
         if (s.Id_MetodoPago === 'MP02') badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/30";
         if (s.Id_MetodoPago === 'MP03') badgeColor = "bg-cyan-500/10 text-cyan-400 border-cyan-500/30";
 
-        const isDeleted = s.Estado === 'ELIMINADO';
-        const rowClass = isDeleted 
-            ? "opacity-40 line-through bg-rose-950/20 hover:bg-rose-950/30 transition-colors" 
-            : "hover:bg-slate-900/40 transition-colors";
-
-        const actionBtn = isDeleted
-            ? `<button onclick="undoDeleteSale('${s.Id_Venta}')" title="Deshacer borrado / Restaurar venta" class="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-semibold flex items-center space-x-1 mx-auto"><i class="fa-solid fa-rotate-left"></i><span>Restaurar</span></button>`
-            : `<button onclick="deleteSale('${s.Id_Venta}')" title="Borrar venta" class="px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/30 text-[11px] font-semibold flex items-center space-x-1 mx-auto transition-colors"><i class="fa-solid fa-trash-can"></i><span>Borrar</span></button>`;
-
         return `
-            <tr class="${rowClass}">
-                <td class="py-2.5 font-bold ${isDeleted ? 'text-rose-400' : 'text-indigo-400'}">${s.Id_Venta}</td>
+            <tr class="hover:bg-slate-900/40 transition-colors">
+                <td class="py-2.5 font-bold text-indigo-400">${s.Id_Venta}</td>
                 <td class="py-2.5 text-slate-400">${s.Fecha_Venta}</td>
                 <td class="py-2.5 text-slate-300 font-bold">${s.Hora_Venta}</td>
                 <td class="py-2.5">
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}">
                         ${s.Nombre_Metodo}
                     </span>
-                    ${isDeleted ? '<span class="ml-1 px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[9px] font-bold not-italic">ANULADA</span>' : ''}
                 </td>
                 <td class="py-2.5 text-slate-300 max-w-xs truncate" title="${s.Resumen_Items}">${s.Resumen_Items}</td>
-                <td class="py-2.5 text-right text-rose-400">S/ ${s.Costo_Total ? s.Costo_Total.toFixed(2) : '0.00'}</td>
-                <td class="py-2.5 text-right text-emerald-400 font-bold">S/ ${s.Total_Venta.toFixed(2)}</td>
-                <td class="py-2.5 text-right text-indigo-400 font-bold">+S/ ${s.Ganancia_Neta ? s.Ganancia_Neta.toFixed(2) : '0.00'}</td>
-                <td class="py-2.5 text-center">${actionBtn}</td>
+                <td class="py-2.5 text-right text-rose-400">S/ ${(s.Costo_Total || 0).toFixed(2)}</td>
+                <td class="py-2.5 text-right font-bold text-emerald-400">S/ ${s.Total_Venta.toFixed(2)}</td>
+                <td class="py-2.5 text-right font-bold text-indigo-400">+S/ ${(s.Ganancia_Neta || 0).toFixed(2)}</td>
+                <td class="py-2.5 text-center">
+                    <button onclick="deleteSale('${s.Id_Venta}')" title="Mover a ventas borradas" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center space-x-1 mx-auto transition-colors cursor-pointer">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>Borrar</span>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Renderizado del Apartado de Ventas Borradas
+function renderSalesTrashTable(deletedSales) {
+    const tbody = document.getElementById('sales-trash-tbody');
+    if (!tbody) return;
+
+    if (!deletedSales || deletedSales.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-500"><i class="fa-solid fa-trash-can text-3xl mb-2 text-slate-600 block"></i><span>La papelera está vacía. No hay ventas borradas registradas.</span></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = deletedSales.map(s => {
+        let badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+        if (s.Id_MetodoPago === 'MP02') badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/30";
+        if (s.Id_MetodoPago === 'MP03') badgeColor = "bg-cyan-500/10 text-cyan-400 border-cyan-500/30";
+
+        return `
+            <tr class="hover:bg-rose-950/20 transition-colors">
+                <td class="py-2.5 font-bold text-rose-400">${s.Id_Venta}</td>
+                <td class="py-2.5 text-slate-400">${s.Fecha_Venta}</td>
+                <td class="py-2.5 text-slate-300 font-bold">${s.Hora_Venta}</td>
+                <td class="py-2.5 text-amber-300/80 font-mono text-[11px]">${s.Fecha_Eliminacion || 'Auditada'}</td>
+                <td class="py-2.5">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}">
+                        ${s.Nombre_Metodo}
+                    </span>
+                </td>
+                <td class="py-2.5 text-slate-300 max-w-xs truncate" title="${s.Resumen_Items}">${s.Resumen_Items}</td>
+                <td class="py-2.5 text-right font-bold text-rose-300">S/ ${s.Total_Venta.toFixed(2)}</td>
+                <td class="py-2.5 text-center">
+                    <div class="flex items-center justify-center space-x-2">
+                        <button onclick="restoreSale('${s.Id_Venta}')" title="Restaurar a ventas activas" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Restaurar</span>
+                        </button>
+                        <button onclick="permanentDeleteSalePrompt('${s.Id_Venta}')" title="Borrar permanentemente de la base de datos" class="px-2.5 py-1 rounded-lg bg-rose-600/25 hover:bg-rose-600/50 text-rose-300 hover:text-white border border-rose-500/40 text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>Borrar Permanente</span>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `;
     }).join('');
@@ -2500,7 +2581,7 @@ function closeTicketModal() {
 // =========================================================================
 
 async function deleteSale(idVenta) {
-    if (!confirm(`¿Está seguro de que desea borrar la venta ${idVenta}? Podrá deshacer esta acción en cualquier momento.`)) {
+    if (!confirm(`¿Desea mover la venta ${idVenta} al apartado de ventas borradas? Podrá restaurarla o borrarla permanentemente desde allí.`)) {
         return;
     }
     try {
@@ -2510,7 +2591,7 @@ async function deleteSale(idVenta) {
         });
         const result = await res.json();
         if (result.success) {
-            showToast(`Venta ${idVenta} eliminada correctamente. <button onclick="undoDeleteSale('${idVenta}')" class="ml-2 underline font-bold text-amber-300 hover:text-amber-200">Deshacer</button>`, "warning");
+            showToast(`Venta ${idVenta} movida al apartado de ventas borradas.`, "warning");
             loadFinancialData();
         } else {
             showToast(result.error || "Error al eliminar venta", "error");
@@ -2520,15 +2601,15 @@ async function deleteSale(idVenta) {
     }
 }
 
-async function undoDeleteSale(idVenta) {
+async function restoreSale(idVenta) {
     try {
-        const res = await apiFetch('/api/sales/undo', {
+        const res = await apiFetch('/api/sales/restore', {
             method: 'POST',
             body: JSON.stringify({ id_venta: idVenta })
         });
         const result = await res.json();
         if (result.success) {
-            showToast(`¡Venta ${result.id_venta} restaurada exitosamente!`, "success");
+            showToast(`¡Venta ${result.id_venta} restaurada con éxito a las ventas activas!`, "success");
             loadFinancialData();
         } else {
             showToast(result.error || "Error al restaurar venta", "error");
@@ -2538,18 +2619,57 @@ async function undoDeleteSale(idVenta) {
     }
 }
 
-async function undoLastDelete() {
+// Alias para compatibilidad
+const undoDeleteSale = restoreSale;
+
+async function permanentDeleteSalePrompt(idVenta) {
+    const ok = confirm(`⚠️ ADVERTENCIA CRÍTICA:
+
+¿Está completamente seguro de ELIMINAR PERMANENTEMENTE la venta ${idVenta} de la base de datos?
+
+Esta acción es irreversible y eliminará el registro de la cabecera y todas sus líneas de detalle.`);
+    if (!ok) return;
+
     try {
-        const res = await apiFetch('/api/sales/undo', {
+        const res = await apiFetch('/api/sales/permanent-delete', {
             method: 'POST',
-            body: JSON.stringify({})
+            body: JSON.stringify({ id_venta: idVenta })
         });
         const result = await res.json();
         if (result.success) {
-            showToast(`¡Venta ${result.id_venta} restaurada exitosamente!`, "success");
+            showToast(`Venta ${idVenta} eliminada permanentemente de la base de datos.`, "error");
             loadFinancialData();
         } else {
-            showToast(result.error || "No hay ventas eliminadas para restaurar", "error");
+            showToast(result.error || "Error al eliminar permanentemente la venta", "error");
+        }
+    } catch (e) {
+        showToast("Error de conexión: " + e.message, "error");
+    }
+}
+
+async function emptyTrashPrompt() {
+    const trashBadge = document.getElementById('badge-trash-sales-count');
+    const count = parseInt(trashBadge?.textContent || '0', 10);
+    if (count === 0) {
+        showToast("La papelera de ventas ya está vacía.", "info");
+        return;
+    }
+
+    const ok = confirm(`⚠️ ¿Desea VACIAR LA PAPELERA y eliminar permanentemente las ${count} ventas borradas de la base de datos?
+
+Esta operación destruirá de manera definitiva todos los registros anulados.`);
+    if (!ok) return;
+
+    try {
+        const res = await apiFetch('/api/sales/empty-trash', {
+            method: 'POST'
+        });
+        const result = await res.json();
+        if (result.success) {
+            showToast(`Se han eliminado permanentemente ${result.count || count} ventas de la base de datos.`, "error");
+            loadFinancialData();
+        } else {
+            showToast(result.error || "Error al vaciar la papelera", "error");
         }
     } catch (e) {
         showToast("Error de conexión: " + e.message, "error");

@@ -359,10 +359,11 @@ def get_categories() -> List[Dict[str, Any]]:
     conn.close()
     return rows
 
-def get_sales_history(limit: int = 50) -> List[Dict[str, Any]]:
+def get_sales_history(limit: int = 100, include_deleted: bool = False) -> List[Dict[str, Any]]:
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("""
+    where_clause = "" if include_deleted else "WHERE (v.Estado IS NULL OR v.Estado = 'ACTIVO')"
+    cur.execute(f"""
         SELECT 
             v.Id_Venta,
             v.Fecha_Venta,
@@ -378,6 +379,7 @@ def get_sales_history(limit: int = 50) -> List[Dict[str, Any]]:
         INNER JOIN METODO_PAGO mp ON v.Id_MetodoPago = mp.Id_MetodoPago
         INNER JOIN DETALLE_VENTA dv ON v.Id_Venta = dv.Id_Venta
         INNER JOIN PRODUCTO p ON dv.Id_Producto = p.Id_Producto
+        {where_clause}
         GROUP BY v.Id_Venta
         ORDER BY v.Fecha_Venta DESC, v.Hora_Venta DESC
         LIMIT ?
@@ -717,5 +719,95 @@ def undo_delete_sale(id_venta: Optional[str] = None) -> Dict[str, Any]:
         cur.execute("DELETE FROM VENTA_PAPELERA WHERE Id_Venta = ?", (target_id,))
         conn.commit()
         return {"success": True, "id_venta": target_id, "action": "undo", "message": f"Venta {target_id} restaurada exitosamente."}
+    finally:
+        conn.close()
+
+def get_deleted_sales() -> List[Dict[str, Any]]:
+    """
+    Obtiene la lista de todas las ventas que han sido anuladas/eliminadas (Papelera de Ventas).
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT 
+            v.Id_Venta,
+            v.Fecha_Venta,
+            v.Hora_Venta,
+            v.Total_Venta,
+            COALESCE(v.Estado, 'ELIMINADO') as Estado,
+            mp.Nombre_Metodo,
+            mp.Id_MetodoPago,
+            COALESCE(vp.Fecha_Eliminacion, v.Fecha_Venta || ' ' || v.Hora_Venta) as Fecha_Eliminacion,
+            COALESCE(vp.Motivo, 'Borrado manual') as Motivo_Eliminacion,
+            ROUND(SUM(dv.Cantidad * p.Costo_Compra), 2) as Costo_Total,
+            ROUND(v.Total_Venta - SUM(dv.Cantidad * p.Costo_Compra), 2) as Ganancia_Neta,
+            GROUP_CONCAT(dv.Cantidad || 'x ' || p.Nombre_Producto, ', ') as Resumen_Items
+        FROM VENTA v
+        INNER JOIN METODO_PAGO mp ON v.Id_MetodoPago = mp.Id_MetodoPago
+        INNER JOIN DETALLE_VENTA dv ON v.Id_Venta = dv.Id_Venta
+        INNER JOIN PRODUCTO p ON dv.Id_Producto = p.Id_Producto
+        LEFT JOIN VENTA_PAPELERA vp ON v.Id_Venta = vp.Id_Venta
+        WHERE v.Estado = 'ELIMINADO'
+        GROUP BY v.Id_Venta
+        ORDER BY vp.Fecha_Eliminacion DESC, v.Fecha_Venta DESC, v.Hora_Venta DESC
+    """)
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return rows
+
+def permanent_delete_sale(id_venta: str) -> Dict[str, Any]:
+    """
+    Elimina permanentemente una venta y sus detalles de la base de datos (Hard Delete).
+    Esta acción es destructiva e irreversible.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT Id_Venta FROM VENTA WHERE Id_Venta = ?", (id_venta,))
+        row = cur.fetchone()
+        if not row:
+            raise ValueError(f"No existe la venta con identificador {id_venta}.")
+        
+        cur.execute("DELETE FROM DETALLE_VENTA WHERE Id_Venta = ?", (id_venta,))
+        cur.execute("DELETE FROM VENTA_PAPELERA WHERE Id_Venta = ?", (id_venta,))
+        cur.execute("DELETE FROM VENTA WHERE Id_Venta = ?", (id_venta,))
+        conn.commit()
+        return {
+            "success": True, 
+            "id_venta": id_venta, 
+            "action": "permanent_delete", 
+            "message": f"Venta {id_venta} eliminada permanentemente de la base de datos."
+        }
+    finally:
+        conn.close()
+
+def empty_trash() -> Dict[str, Any]:
+    """
+    Vacía la papelera eliminando permanentemente todas las ventas marcadas como 'ELIMINADO'.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT Id_Venta FROM VENTA WHERE Estado = 'ELIMINADO'")
+        rows = cur.fetchall()
+        deleted_ids = [r['Id_Venta'] for r in rows]
+
+        cur.execute("SELECT Id_Venta FROM VENTA_PAPELERA")
+        for r in cur.fetchall():
+            if r['Id_Venta'] not in deleted_ids:
+                deleted_ids.append(r['Id_Venta'])
+
+        for vid in deleted_ids:
+            cur.execute("DELETE FROM DETALLE_VENTA WHERE Id_Venta = ?", (vid,))
+            cur.execute("DELETE FROM VENTA_PAPELERA WHERE Id_Venta = ?", (vid,))
+            cur.execute("DELETE FROM VENTA WHERE Id_Venta = ?", (vid,))
+
+        conn.commit()
+        return {
+            "success": True, 
+            "count": len(deleted_ids), 
+            "deleted_ids": deleted_ids, 
+            "message": f"Se han eliminado permanentemente {len(deleted_ids)} ventas de la papelera."
+        }
     finally:
         conn.close()

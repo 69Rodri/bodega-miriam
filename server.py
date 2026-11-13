@@ -379,6 +379,59 @@ async def api_undo_delete_sale(request: web.Request) -> web.Response:
     except Exception as e:
         return web.json_response({"success": False, "error": str(e)}, status=500)
 
+
+async def api_deleted_sales(request: web.Request) -> web.Response:
+    try:
+        username = get_request_user(request)
+        if username == 'miriam':
+            deleted = database.get_deleted_sales()
+        else:
+            deleted = []
+        return web.json_response({"success": True, "deleted_sales": deleted})
+    except Exception as e:
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+async def api_permanent_delete_sale(request: web.Request) -> web.Response:
+    try:
+        data = await request.json()
+        id_venta = data.get('id_venta')
+        if not id_venta:
+            return web.json_response({"success": False, "error": "Código de venta requerido."}, status=400)
+
+        username = get_request_user(request)
+        if username == 'miriam':
+            res = database.permanent_delete_sale(id_venta)
+        else:
+            return web.json_response({"success": False, "error": "Acción permitida únicamente en Bodega Miriam."}, status=403)
+
+        await broadcast_ws({
+            "event": "SALE_PERMANENTLY_DELETED",
+            "user": username,
+            "id_venta": id_venta
+        })
+        return web.json_response(res)
+    except ValueError as ve:
+        return web.json_response({"success": False, "error": str(ve)}, status=400)
+    except Exception as e:
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+async def api_empty_trash(request: web.Request) -> web.Response:
+    try:
+        username = get_request_user(request)
+        if username == 'miriam':
+            res = database.empty_trash()
+        else:
+            return web.json_response({"success": False, "error": "Acción permitida únicamente en Bodega Miriam."}, status=403)
+
+        await broadcast_ws({
+            "event": "TRASH_EMPTIED",
+            "user": username,
+            "count": res.get("count", 0)
+        })
+        return web.json_response(res)
+    except Exception as e:
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
 async def api_financial_summary(request: web.Request) -> web.Response:
     try:
         username = get_request_user(request)
@@ -771,8 +824,12 @@ def create_app() -> web.Application:
     app.router.add_get('/api/catalog', api_catalog)
     app.router.add_get('/api/sales', api_sales)
     app.router.add_post('/api/sales', api_register_sale)
+    app.router.add_get('/api/sales/deleted', api_deleted_sales)
     app.router.add_post('/api/sales/delete', api_delete_sale)
     app.router.add_post('/api/sales/undo', api_undo_delete_sale)
+    app.router.add_post('/api/sales/restore', api_undo_delete_sale)
+    app.router.add_post('/api/sales/permanent-delete', api_permanent_delete_sale)
+    app.router.add_post('/api/sales/empty-trash', api_empty_trash)
     app.router.add_get('/api/financial-summary', api_financial_summary)
     app.router.add_get('/api/schema', api_schema)
     app.router.add_get('/api/scripts', api_scripts)
