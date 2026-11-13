@@ -333,6 +333,52 @@ async def api_register_sale(request: web.Request) -> web.Response:
     except Exception as e:
         return web.json_response({"success": False, "error": str(e)}, status=500)
 
+async def api_delete_sale(request: web.Request) -> web.Response:
+    try:
+        data = await request.json()
+        id_venta = data.get('id_venta')
+        if not id_venta:
+            return web.json_response({"success": False, "error": "Código de venta requerido."}, status=400)
+
+        username = get_request_user(request)
+        if username == 'miriam':
+            res = database.delete_sale(id_venta)
+        else:
+            return web.json_response({"success": False, "error": "Acción permitida únicamente en Bodega Miriam."}, status=403)
+
+        await broadcast_ws({
+            "event": "SALE_DELETED",
+            "user": username,
+            "id_venta": id_venta
+        })
+        return web.json_response(res)
+    except ValueError as ve:
+        return web.json_response({"success": False, "error": str(ve)}, status=400)
+    except Exception as e:
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+async def api_undo_delete_sale(request: web.Request) -> web.Response:
+    try:
+        data = await request.json() if request.can_read_body else {}
+        id_venta = data.get('id_venta') if isinstance(data, dict) else None
+
+        username = get_request_user(request)
+        if username == 'miriam':
+            res = database.undo_delete_sale(id_venta)
+        else:
+            return web.json_response({"success": False, "error": "Acción permitida únicamente en Bodega Miriam."}, status=403)
+
+        await broadcast_ws({
+            "event": "SALE_RESTORED",
+            "user": username,
+            "id_venta": res.get("id_venta")
+        })
+        return web.json_response(res)
+    except ValueError as ve:
+        return web.json_response({"success": False, "error": str(ve)}, status=400)
+    except Exception as e:
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
 async def api_financial_summary(request: web.Request) -> web.Response:
     try:
         username = get_request_user(request)
@@ -725,11 +771,12 @@ def create_app() -> web.Application:
     app.router.add_get('/api/catalog', api_catalog)
     app.router.add_get('/api/sales', api_sales)
     app.router.add_post('/api/sales', api_register_sale)
+    app.router.add_post('/api/sales/delete', api_delete_sale)
+    app.router.add_post('/api/sales/undo', api_undo_delete_sale)
     app.router.add_get('/api/financial-summary', api_financial_summary)
     app.router.add_get('/api/schema', api_schema)
     app.router.add_get('/api/scripts', api_scripts)
     app.router.add_post('/api/sql', api_execute_sql)
-    app.router.add_post('/api/reset-db', api_reset_db)
 
     # WebSocket & Estáticos
     app.router.add_get('/ws', websocket_handler)

@@ -94,11 +94,7 @@
                         <span class="hidden sm:inline">Sesión</span>
                     </button>
 
-                    <!-- Botón Reiniciar Base de Datos -->
-                    <button onclick="resetDatabasePrompt()" title="Restaurar base de datos a sus valores piloto basales" class="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center space-x-1.5 transition-all">
-                        <i class="fa-solid fa-rotate-left text-amber-400"></i>
-                        <span class="hidden xl:inline">Reiniciar BD</span>
-                    </button>
+
                 </div>
 
             </div>
@@ -282,8 +278,14 @@
                 <div class="flex items-center space-x-2 w-full sm:w-auto">
                     <span class="text-xs text-slate-400 font-medium">Fecha:</span>
                     <select id="cash-date-filter" onchange="loadFinancialData()" class="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
-                        <option value="ALL">Todas las Fechas (Histórico)</option>
-                        <option value="2026-10-25" selected>2026-10-25 (Día Piloto)</option>
+                        <option value="ALL">Todas las Fechas (Histórico Consolidado)</option>
+                        <option value="2026-11-13">2026-11-13 (Jornada hasta 12:40)</option>
+                        <option value="2026-11-12" selected>2026-11-12 (Jornada de Hoy)</option>
+                        <option value="2026-11-11">2026-11-11 (Postest)</option>
+                        <option value="2026-11-10">2026-11-10 (Postest)</option>
+                        <option value="2026-11-09">2026-11-09 (Postest)</option>
+                        <option value="2026-11-08">2026-11-08 (Postest)</option>
+                        <option value="2026-10-25">2026-10-25 (Jornada Basal)</option>
                     </select>
                 </div>
             </div>
@@ -404,7 +406,13 @@
                         <i class="fa-solid fa-list-check text-cyan-400"></i>
                         <span>Registro Detallado de Ventas en Tiempo Real</span>
                     </h3>
-                    <span class="text-xs text-slate-400 font-mono">Últimas transacciones registradas</span>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="undoLastDelete()" title="Deshacer último borrado de venta" class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center space-x-1.5 transition-all">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Deshacer Borrado</span>
+                        </button>
+                        <span class="text-xs text-slate-400 font-mono hidden sm:inline">Trazabilidad ACID</span>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -419,6 +427,7 @@
                                 <th class="py-2.5 text-right">Costo (S/)</th>
                                 <th class="py-2.5 text-right text-emerald-400">Total (S/)</th>
                                 <th class="py-2.5 text-right text-indigo-400">Ganancia (S/)</th>
+                                <th class="py-2.5 text-center">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="sales-history-tbody" class="divide-y divide-slate-800/60 font-mono">

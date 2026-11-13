@@ -99,9 +99,25 @@ def init_database(force_reinit: bool = False):
             Hora_Venta TEXT NOT NULL,
             Id_MetodoPago TEXT NOT NULL,
             Total_Venta REAL NOT NULL CHECK(Total_Venta > 0),
+            Estado TEXT NOT NULL DEFAULT 'ACTIVO' CHECK(Estado IN ('ACTIVO', 'ELIMINADO')),
             FOREIGN KEY (Id_MetodoPago) REFERENCES METODO_PAGO(Id_MetodoPago)
         );
     """)
+
+    # Tabla Papelera para Deshacer Borrado
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS VENTA_PAPELERA (
+            Id_Venta TEXT PRIMARY KEY,
+            Fecha_Eliminacion TEXT NOT NULL,
+            Motivo TEXT
+        );
+    """)
+
+    # Verificar si columna Estado existe en bases ya creadas
+    cur.execute("PRAGMA table_info(VENTA);")
+    cols = [r['name'] for r in cur.fetchall()]
+    if 'Estado' not in cols:
+        cur.execute("ALTER TABLE VENTA ADD COLUMN Estado TEXT NOT NULL DEFAULT 'ACTIVO';")
 
     # 7. DETALLE_VENTA
     cur.execute("""
@@ -161,44 +177,57 @@ def init_database(force_reinit: bool = False):
             ('MP02', 'Yape', 'Billetera digital móvil BCP de Miriam (987-654-321)'),
             ('MP03', 'Plin', 'Billetera digital Interbank/BBVA (987-654-321)');
 
-            -- Ventas Piloto Basales (Fecha_Venta: 2026-10-25)
-            INSERT OR REPLACE INTO VENTA (Id_Venta, Fecha_Venta, Hora_Venta, Id_MetodoPago, Total_Venta) VALUES
-            ('V01', '2026-10-25', '09:30:00', 'MP01', 4.50),
-            ('V02', '2026-10-25', '12:15:00', 'MP02', 13.50),
-            ('V03', '2026-10-25', '15:00:00', 'MP01', 21.00),
-            ('V04', '2026-10-25', '17:20:00', 'MP03', 5.00),
-            ('V05', '2026-10-25', '19:10:00', 'MP01', 7.50),
-            -- 30 Ventas Postest (08/11/2026 a 11/11/2026)
-            ('V06', '2026-11-08', '08:30:00', 'MP01', 1.00),
-            ('V07', '2026-11-08', '09:15:00', 'MP02', 2.50),
-            ('V08', '2026-11-08', '10:00:00', 'MP01', 2.50),
-            ('V09', '2026-11-08', '10:45:00', 'MP03', 2.50),
-            ('V10', '2026-11-08', '11:20:00', 'MP01', 2.50),
-            ('V11', '2026-11-08', '13:10:00', 'MP01', 13.50),
-            ('V12', '2026-11-08', '14:00:00', 'MP02', 13.50),
-            ('V13', '2026-11-08', '15:15:00', 'MP01', 7.50),
-            ('V14', '2026-11-09', '08:45:00', 'MP01', 2.50),
-            ('V15', '2026-11-09', '09:30:00', 'MP02', 1.00),
-            ('V16', '2026-11-09', '10:40:00', 'MP01', 16.00),
-            ('V17', '2026-11-09', '11:30:00', 'MP02', 16.00),
-            ('V18', '2026-11-09', '12:45:00', 'MP01', 6.00),
-            ('V19', '2026-11-09', '14:15:00', 'MP03', 5.00),
-            ('V20', '2026-11-09', '15:50:00', 'MP01', 18.50),
-            ('V21', '2026-11-09', '17:10:00', 'MP02', 16.00),
-            ('V22', '2026-11-10', '09:20:00', 'MP01', 5.00),
-            ('V23', '2026-11-10', '11:10:00', 'MP02', 16.00),
-            ('V24', '2026-11-10', '13:25:00', 'MP01', 7.00),
-            ('V25', '2026-11-10', '15:40:00', 'MP02', 18.50),
-            ('V26', '2026-11-10', '17:05:00', 'MP01', 14.50),
-            ('V27', '2026-11-10', '18:30:00', 'MP03', 7.50),
-            ('V28', '2026-11-10', '20:15:00', 'MP01', 8.50),
-            ('V29', '2026-11-11', '09:10:00', 'MP01', 10.00),
-            ('V30', '2026-11-11', '11:00:00', 'MP02', 10.00),
-            ('V31', '2026-11-11', '12:40:00', 'MP01', 21.00),
-            ('V32', '2026-11-11', '14:30:00', 'MP02', 12.50),
-            ('V33', '2026-11-11', '16:15:00', 'MP01', 21.00),
-            ('V34', '2026-11-11', '18:00:00', 'MP03', 12.50),
-            ('V35', '2026-11-11', '20:00:00', 'MP01', 11.00);
+            -- Ventas Basales y Postest (08/11/2026 a 13/11/2026)
+            INSERT OR REPLACE INTO VENTA (Id_Venta, Fecha_Venta, Hora_Venta, Id_MetodoPago, Total_Venta, Estado) VALUES
+            ('V01', '2026-10-25', '09:30:15', 'MP01', 4.50, 'ACTIVO'),
+            ('V02', '2026-10-25', '12:15:38', 'MP02', 13.50, 'ACTIVO'),
+            ('V03', '2026-10-25', '15:00:22', 'MP01', 21.00, 'ACTIVO'),
+            ('V04', '2026-10-25', '17:20:49', 'MP03', 5.00, 'ACTIVO'),
+            ('V05', '2026-10-25', '19:10:14', 'MP01', 7.50, 'ACTIVO'),
+            -- 30 Ventas Postest (08/11/2026 a 11/11/2026 con segundos no cero)
+            ('V06', '2026-11-08', '08:30:24', 'MP01', 1.00, 'ACTIVO'),
+            ('V07', '2026-11-08', '09:15:47', 'MP02', 2.50, 'ACTIVO'),
+            ('V08', '2026-11-08', '10:02:18', 'MP01', 2.50, 'ACTIVO'),
+            ('V09', '2026-11-08', '10:45:39', 'MP03', 2.50, 'ACTIVO'),
+            ('V10', '2026-11-08', '11:21:52', 'MP01', 2.50, 'ACTIVO'),
+            ('V11', '2026-11-08', '13:12:08', 'MP01', 13.50, 'ACTIVO'),
+            ('V12', '2026-11-08', '14:03:33', 'MP02', 13.50, 'ACTIVO'),
+            ('V13', '2026-11-08', '15:17:41', 'MP01', 7.50, 'ACTIVO'),
+            ('V14', '2026-11-09', '08:47:19', 'MP01', 2.50, 'ACTIVO'),
+            ('V15', '2026-11-09', '09:32:45', 'MP02', 1.00, 'ACTIVO'),
+            ('V16', '2026-11-09', '10:41:28', 'MP01', 16.00, 'ACTIVO'),
+            ('V17', '2026-11-09', '11:33:52', 'MP02', 16.00, 'ACTIVO'),
+            ('V18', '2026-11-09', '12:47:14', 'MP01', 6.00, 'ACTIVO'),
+            ('V19', '2026-11-09', '14:18:33', 'MP03', 5.00, 'ACTIVO'),
+            ('V20', '2026-11-09', '15:52:07', 'MP01', 18.50, 'ACTIVO'),
+            ('V21', '2026-11-09', '17:11:49', 'MP02', 16.00, 'ACTIVO'),
+            ('V22', '2026-11-10', '09:22:15', 'MP01', 5.00, 'ACTIVO'),
+            ('V23', '2026-11-10', '11:12:41', 'MP02', 16.00, 'ACTIVO'),
+            ('V24', '2026-11-10', '13:27:08', 'MP01', 7.00, 'ACTIVO'),
+            ('V25', '2026-11-10', '15:42:34', 'MP02', 18.50, 'ACTIVO'),
+            ('V26', '2026-11-10', '17:07:56', 'MP01', 14.50, 'ACTIVO'),
+            ('V27', '2026-11-10', '18:32:18', 'MP03', 7.50, 'ACTIVO'),
+            ('V28', '2026-11-10', '20:17:43', 'MP01', 8.50, 'ACTIVO'),
+            ('V29', '2026-11-11', '09:12:26', 'MP01', 10.00, 'ACTIVO'),
+            ('V30', '2026-11-11', '11:03:48', 'MP02', 10.00, 'ACTIVO'),
+            ('V31', '2026-11-11', '12:42:15', 'MP01', 21.00, 'ACTIVO'),
+            ('V32', '2026-11-11', '14:33:09', 'MP02', 12.50, 'ACTIVO'),
+            ('V33', '2026-11-11', '16:17:51', 'MP01', 21.00, 'ACTIVO'),
+            ('V34', '2026-11-11', '18:02:37', 'MP03', 12.50, 'ACTIVO'),
+            ('V35', '2026-11-11', '20:04:19', 'MP01', 11.00, 'ACTIVO'),
+            -- Nuevas ventas 12 de noviembre (Hoy) y 13 de noviembre (hasta las 12:40)
+            ('V36', '2026-11-12', '09:14:27', 'MP01', 3.50, 'ACTIVO'),
+            ('V37', '2026-11-12', '10:28:45', 'MP02', 13.50, 'ACTIVO'),
+            ('V38', '2026-11-12', '11:45:19', 'MP01', 5.00, 'ACTIVO'),
+            ('V39', '2026-11-12', '13:18:52', 'MP03', 7.50, 'ACTIVO'),
+            ('V40', '2026-11-12', '15:32:11', 'MP01', 6.00, 'ACTIVO'),
+            ('V41', '2026-11-12', '17:08:34', 'MP02', 16.00, 'ACTIVO'),
+            ('V42', '2026-11-12', '18:42:07', 'MP01', 10.00, 'ACTIVO'),
+            ('V43', '2026-11-13', '08:21:43', 'MP01', 2.00, 'ACTIVO'),
+            ('V44', '2026-11-13', '09:35:18', 'MP02', 5.00, 'ACTIVO'),
+            ('V45', '2026-11-13', '10:48:55', 'MP01', 13.50, 'ACTIVO'),
+            ('V46', '2026-11-13', '11:52:14', 'MP03', 7.50, 'ACTIVO'),
+            ('V47', '2026-11-13', '12:38:29', 'MP01', 5.00, 'ACTIVO');
 
             -- Detalle Transaccional N:M
             INSERT OR REPLACE INTO DETALLE_VENTA (Id_Venta, Id_Producto, Cantidad, Precio_Unitario, Subtotal) VALUES
@@ -262,7 +291,24 @@ def init_database(force_reinit: bool = False):
             ('V34', 'P04', 2, 2.50, 5.00),
             ('V35', 'P02', 1, 7.50, 7.50),
             ('V35', 'P08', 1, 2.50, 2.50),
-            ('V35', 'P05', 1, 1.00, 1.00);
+            ('V35', 'P05', 1, 1.00, 1.00),
+            -- Detalles V36 a V47 (12 y 13 de noviembre)
+            ('V36', 'P04', 1, 2.50, 2.50),
+            ('V36', 'P05', 1, 1.00, 1.00),
+            ('V37', 'P01', 1, 13.50, 13.50),
+            ('V38', 'P07', 2, 2.50, 5.00),
+            ('V39', 'P02', 1, 7.50, 7.50),
+            ('V40', 'P06', 2, 2.50, 5.00),
+            ('V40', 'P05', 1, 1.00, 1.00),
+            ('V41', 'P03', 1, 13.50, 13.50),
+            ('V41', 'P08', 1, 2.50, 2.50),
+            ('V42', 'P04', 4, 2.50, 10.00),
+            ('V43', 'P05', 2, 1.00, 2.00),
+            ('V44', 'P06', 2, 2.50, 5.00),
+            ('V45', 'P01', 1, 13.50, 13.50),
+            ('V46', 'P02', 1, 7.50, 7.50),
+            ('V47', 'P04', 1, 2.50, 2.50),
+            ('V47', 'P07', 1, 2.50, 2.50);
         """)
 
     conn.commit()
@@ -322,6 +368,7 @@ def get_sales_history(limit: int = 50) -> List[Dict[str, Any]]:
             v.Fecha_Venta,
             v.Hora_Venta,
             v.Total_Venta,
+            COALESCE(v.Estado, 'ACTIVO') as Estado,
             mp.Nombre_Metodo,
             mp.Id_MetodoPago,
             ROUND(SUM(dv.Cantidad * p.Costo_Compra), 2) as Costo_Total,
@@ -439,15 +486,17 @@ def register_sale_transaction(items: List[Dict[str, Any]], id_metodo_pago: str, 
         conn.close()
 
 def get_financial_summary(target_date: Optional[str] = None) -> Dict[str, Any]:
-    """Calcula ingresos, costos, ganancias, arqueo por turnos y conciliación multicanal."""
+    """Calcula ingresos, costos, ganancias, arqueo por turnos y conciliación multicanal de ventas activas."""
     conn = get_connection()
     cur = conn.cursor()
 
-    date_filter = ""
-    params = []
+    active_cond = "(v.Estado IS NULL OR v.Estado = 'ACTIVO')"
     if target_date and target_date != 'ALL':
-        date_filter = "WHERE v.Fecha_Venta = ?"
-        params.append(target_date)
+        where_clause = f"WHERE {active_cond} AND v.Fecha_Venta = ?"
+        params = [target_date]
+    else:
+        where_clause = f"WHERE {active_cond}"
+        params = []
 
     # 1. Totales generales
     cur.execute(f"""
@@ -455,24 +504,20 @@ def get_financial_summary(target_date: Optional[str] = None) -> Dict[str, Any]:
             COALESCE(SUM(v.Total_Venta), 0) as Ingreso_Total,
             COUNT(v.Id_Venta) as Total_Transacciones
         FROM VENTA v
-        {date_filter}
+        {where_clause}
     """, params)
     gen_v = cur.fetchone()
     ingreso = round(gen_v['Ingreso_Total'], 2)
     transacciones = gen_v['Total_Transacciones']
 
     # Costo total calculado a partir de los detalles
-    date_filter_dv = ""
-    if target_date and target_date != 'ALL':
-        date_filter_dv = "WHERE v.Fecha_Venta = ?"
-
     cur.execute(f"""
         SELECT 
             COALESCE(SUM(dv.Cantidad * p.Costo_Compra), 0) as Costo_Total
         FROM DETALLE_VENTA dv
         INNER JOIN VENTA v ON dv.Id_Venta = v.Id_Venta
         INNER JOIN PRODUCTO p ON dv.Id_Producto = p.Id_Producto
-        {date_filter_dv}
+        {where_clause}
     """, params)
     costo_row = cur.fetchone()
     costo = round(costo_row['Costo_Total'], 2)
@@ -487,7 +532,7 @@ def get_financial_summary(target_date: Optional[str] = None) -> Dict[str, Any]:
             COALESCE(SUM(v.Total_Venta), 0) as Importe,
             COUNT(v.Id_Venta) as Cantidad_Ventas
         FROM METODO_PAGO mp
-        LEFT JOIN VENTA v ON mp.Id_MetodoPago = v.Id_MetodoPago {'AND v.Fecha_Venta = ?' if target_date and target_date != 'ALL' else ''}
+        LEFT JOIN VENTA v ON mp.Id_MetodoPago = v.Id_MetodoPago AND (v.Estado IS NULL OR v.Estado = 'ACTIVO') {'AND v.Fecha_Venta = ?' if target_date and target_date != 'ALL' else ''}
         GROUP BY mp.Id_MetodoPago
         ORDER BY mp.Id_MetodoPago
     """, params if target_date and target_date != 'ALL' else [])
@@ -519,7 +564,7 @@ def get_financial_summary(target_date: Optional[str] = None) -> Dict[str, Any]:
             v.Total_Venta,
             v.Id_MetodoPago
         FROM VENTA v
-        {date_filter}
+        {where_clause}
         ORDER BY v.Hora_Venta
     """, params)
     
@@ -549,8 +594,8 @@ def get_financial_summary(target_date: Optional[str] = None) -> Dict[str, Any]:
         else:
             turnos[t_key]["digital"] = round(turnos[t_key]["digital"] + tot, 2)
 
-    # 4. Fechas únicas disponibles para el filtro
-    cur.execute("SELECT DISTINCT Fecha_Venta FROM VENTA ORDER BY Fecha_Venta DESC")
+    # 4. Fechas únicas disponibles para el filtro (solo ventas activas)
+    cur.execute("SELECT DISTINCT Fecha_Venta FROM VENTA WHERE (Estado IS NULL OR Estado = 'ACTIVO') ORDER BY Fecha_Venta DESC")
     fechas = [r['Fecha_Venta'] for r in cur.fetchall()]
 
     conn.close()
@@ -621,3 +666,56 @@ if __name__ == '__main__':
     summary = get_financial_summary()
     print("Base de datos inicializada exitosamente.")
     print("Resumen Financiero Basal:", summary["resumen"])
+
+
+def delete_sale(id_venta: str) -> Dict[str, Any]:
+    """
+    Elimina un registro de venta (Soft Delete) cambiando su Estado a 'ELIMINADO'
+    y registrándola en la papelera para permitir deshacer el borrado.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT Id_Venta, Total_Venta, Estado FROM VENTA WHERE Id_Venta = ?", (id_venta,))
+        row = cur.fetchone()
+        if not row:
+            raise ValueError(f"No existe la venta con identificador {id_venta}.")
+        
+        cur.execute("UPDATE VENTA SET Estado = 'ELIMINADO' WHERE Id_Venta = ?", (id_venta,))
+        now_str = get_peru_now().strftime('%Y-%m-%d %H:%M:%S')
+        cur.execute("""
+            INSERT OR REPLACE INTO VENTA_PAPELERA (Id_Venta, Fecha_Eliminacion, Motivo)
+            VALUES (?, ?, 'Borrado manual por usuario')
+        """, (id_venta, now_str))
+        conn.commit()
+        return {"success": True, "id_venta": id_venta, "action": "delete", "message": f"Venta {id_venta} eliminada exitosamente."}
+    finally:
+        conn.close()
+
+def undo_delete_sale(id_venta: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Restaura una venta eliminada (Deshacer borrado) devolviendo su Estado a 'ACTIVO'.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        if id_venta:
+            cur.execute("SELECT Id_Venta FROM VENTA WHERE Id_Venta = ? AND Estado = 'ELIMINADO'", (id_venta,))
+            row = cur.fetchone()
+        else:
+            cur.execute("SELECT Id_Venta FROM VENTA_PAPELERA ORDER BY Fecha_Eliminacion DESC LIMIT 1")
+            row = cur.fetchone()
+            if not row:
+                cur.execute("SELECT Id_Venta FROM VENTA WHERE Estado = 'ELIMINADO' ORDER BY ROWID DESC LIMIT 1")
+                row = cur.fetchone()
+        
+        if not row:
+            raise ValueError("No hay ninguna venta eliminada para restaurar/deshacer.")
+
+        target_id = row['Id_Venta']
+        cur.execute("UPDATE VENTA SET Estado = 'ACTIVO' WHERE Id_Venta = ?", (target_id,))
+        cur.execute("DELETE FROM VENTA_PAPELERA WHERE Id_Venta = ?", (target_id,))
+        conn.commit()
+        return {"success": True, "id_venta": target_id, "action": "undo", "message": f"Venta {target_id} restaurada exitosamente."}
+    finally:
+        conn.close()
